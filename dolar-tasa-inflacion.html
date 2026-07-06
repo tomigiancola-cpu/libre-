@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Dólar, tasa e inflación</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #0b0b0b;
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    color: #898781;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #52514e;
+    margin-bottom: 20px;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: #52514e;
+  }
+  .legend span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 380px;
+  }
+  .note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: #898781;
+  }
+  .dash-line {
+    display: inline-block;
+    width: 18px;
+    height: 0;
+    border-top: 2px dashed #898781;
+  }
+  .source {
+    font-size: 12px;
+    color: #898781;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="eyebrow">Argentina · Variación % mensual</div>
+<h1>Dólar, tasa e inflación</h1>
+<div class="subtitle">Devaluación mensual vs. tasa TAMAR mensualizada vs. inflación esperada — 2026</div>
+
+<div class="legend">
+  <span><span class="swatch" style="background:#2a78d6;"></span>Dólar oficial (var. % mensual)</span>
+  <span><span class="swatch" style="background:#eda100;"></span>Tasa TAMAR (TEM, % mensual)</span>
+  <span><span class="swatch" style="background:#e34948;"></span>Inflación (IPC, % mensual)</span>
+</div>
+
+<div class="chart-wrap">
+  <canvas id="remChart" role="img" aria-label="Gráfico de líneas comparando la variación porcentual mensual del dólar oficial, la tasa TAMAR mensualizada y la inflación IPC en Argentina, de enero a diciembre de 2026. De julio a diciembre son proyecciones del Top 10 del REM de junio.">
+Datos: dólar var% mensual: ene s/d, feb -2.6, mar -0.9, abr -0.8, may 0.9, jun 3.7, jul -0.1, ago 1.9, sep 2.2, oct 2.2, nov 1.9, dic 1.8.
+Tasa TEM %: 2.8, 2.7, 2.4, 1.9, 1.9, 1.8, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9.
+Inflación %: 2.9, 2.9, 3.4, 2.6, 2.1, 1.9, 2.0, 1.8, 1.8, 1.7, 1.6, 1.8.
+  </canvas>
+</div>
+
+<div class="note">
+  <span class="dash-line"></span>
+  <span>jul-dic 2026: proyección Top 10, REM junio 2026</span>
+</div>
+<div class="source">Fuente: BCRA, Relevamiento de Expectativas de Mercado (REM), junio 2026.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const labels = ['ene-26','feb-26','mar-26','abr-26','may-26','jun-26','jul-26','ago-26','sep-26','oct-26','nov-26','dic-26'];
+const dolar = [null,-2.59,-0.93,-0.80,0.85,3.68,-0.10,1.90,2.20,2.16,1.85,1.76];
+const tasa = [2.79,2.71,2.39,1.92,1.88,1.82,1.87,1.89,1.92,1.92,1.91,1.90];
+const inflacion = [2.9,2.9,3.4,2.6,2.1,1.9,2.0,1.8,1.8,1.7,1.6,1.8];
+const splitIdx = 6;
+
+function splitSeries(data){
+  const solid = data.map((v,i)=> i<=splitIdx ? v : null);
+  const dashed = data.map((v,i)=> i>=splitIdx ? v : null);
+  return {solid, dashed};
+}
+const dolarS = splitSeries(dolar);
+const tasaS = splitSeries(tasa);
+const inflacionS = splitSeries(inflacion);
+
+const muted = '#898781';
+const grid = '#e1e0d9';
+
+function makeDatasets(dataS, color, label){
+  return [
+    { label, data: dataS.solid, borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 3, pointBackgroundColor: color, tension: 0.15, spanGaps:false },
+    { label: label + ' (proy.)', data: dataS.dashed, borderColor: color, backgroundColor: color, borderWidth: 2, borderDash:[5,4], pointRadius: 3, pointBackgroundColor: color, tension: 0.15, spanGaps:false }
+  ];
+}
+
+const datasets = [
+  ...makeDatasets(dolarS, '#2a78d6', 'Dólar'),
+  ...makeDatasets(tasaS, '#eda100', 'Tasa TAMAR'),
+  ...makeDatasets(inflacionS, '#e34948', 'Inflación')
+];
+
+new Chart(document.getElementById('remChart'), {
+  type: 'line',
+  data: { labels, datasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0].label,
+          label: (item) => {
+            if (item.raw === null) return null;
+            const base = item.dataset.label.replace(' (proy.)','');
+            return base + ': ' + item.raw.toFixed(1) + '%';
+          }
+        },
+        filter: (item) => item.raw !== null
+      }
+    },
+    scales: {
+      x: { grid: { display:false }, ticks: { color: muted, font:{size:11} }, border:{color:grid} },
+      y: {
+        grid: { color: grid },
+        border: { display:false },
+        ticks: { color: muted, font:{size:11}, callback: (v)=> v + '%' }
+      }
+    }
+  }
+});
+</script>
+
+</body>
+</html>
