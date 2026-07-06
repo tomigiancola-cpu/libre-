@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Curvas de rendimiento por familia de bonos</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #0b0b0b;
+    max-width: 780px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    color: #898781;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 14px;
+  }
+  #curveTitle {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0 0 14px;
+  }
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  button {
+    font-size: 13px;
+    font-family: inherit;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 0.5px solid #c3c2b7;
+    background: transparent;
+    cursor: pointer;
+    color: #0b0b0b;
+  }
+  button:hover {
+    background: #fcfcfb;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: #52514e;
+  }
+  .legend span.item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+  }
+  .source {
+    font-size: 12px;
+    color: #898781;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="eyebrow">BYMA · 30-jun-26 · duración ≤ 3 años</div>
+<h1>Curvas de rendimiento por familia de bonos</h1>
+<div id="curveTitle">Comparación de curvas de tendencia</div>
+
+<div class="btn-row" id="btnRowC"></div>
+
+<div style="position:relative;width:100%;height:380px;">
+  <canvas id="curveChart2" role="img" aria-label="Gráfico de dispersión con línea de tendencia y etiquetas por bono que muestra el rendimiento según duración modificada hasta 3 años, con vista de comparación entre las cuatro curvas de tendencia junto con sus bonos.">Curva de rendimientos con línea de tendencia por familia de bonos, hasta 3 años de duración, al 30 de junio de 2026, con etiquetas por ticker y comparación entre familias.</canvas>
+</div>
+<div id="legendC" class="legend"></div>
+<div class="source">Fuente: BYMA/IAMC, informe de bonos al 30-jun-26.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const fam = {
+  tamar: { name:'TAMAR', subA:'Letra', subB:'Bono', colorA:'#2a78d6', colorB:'#1baf7a', trendColor:'#2a78d6',
+    points:[
+      {t:'M31G6', x:0.134, y:1.71, sub:'A'},
+      {t:'TMF27', x:0.508, y:1.99, sub:'B'},
+      {t:'TMG27', x:0.885, y:2.21, sub:'B'},
+      {t:'TMF28', x:1.312, y:1.81, sub:'B'},
+      {t:'TMG28', x:1.587, y:2.51, sub:'B'}
+    ]},
+  duales: { name:'Duales', subA:'Tasa fija vs TAMAR', subB:'CER vs TAMAR', colorA:'#2a78d6', colorB:'#1baf7a', trendColor:'#eda100',
+    points:[
+      {t:'TTS26', x:0.164, y:1.79, sub:'A'},
+      {t:'TTD26', x:0.359, y:1.89, sub:'A'},
+      {t:'TXMJ8', x:1.472, y:2.46, sub:'B'},
+      {t:'TXMD8', x:1.792, y:2.54, sub:'B'},
+      {t:'TXMJ9', x:2.177, y:2.57, sub:'B'},
+      {t:'TXMD9', x:2.495, y:2.63, sub:'B'},
+      {t:'TXMJ0', x:2.880, y:2.64, sub:'B'}
+    ]},
+  dlinked: { name:'Dollar linked', subA:'Letra', subB:'Bono', colorA:'#2a78d6', colorB:'#1baf7a', trendColor:'#1baf7a',
+    points:[
+      {t:'D30S6', x:0.2, y:0.14, sub:'A'},
+      {t:'D31G6', x:0.2, y:3.77, sub:'A'},
+      {t:'D31L6', x:0.1, y:5.86, sub:'A'},
+      {t:'D31M7', x:0.7, y:1.05, sub:'A'},
+      {t:'TZVD8', x:2.3, y:8.33, sub:'A'},
+      {t:'TZV27', x:1.0, y:0.55, sub:'B'},
+      {t:'TZV28', x:1.9, y:7.68, sub:'B'}
+    ]},
+  cer: { name:'CER', subA:'Cupón cero', subB:'Tasa fija', colorA:'#2a78d6', colorB:'#1baf7a', trendColor:'#e34948',
+    points:[
+      {t:'TZXO6', x:0.323, y:1.03, sub:'A'},
+      {t:'TZXD6', x:0.431, y:4.32, sub:'A'},
+      {t:'TZXM7', x:0.701, y:5.46, sub:'A'},
+      {t:'TZXA7', x:0.792, y:3.42, sub:'A'},
+      {t:'TZXY7', x:0.873, y:3.54, sub:'A'},
+      {t:'TZX27', x:0.940, y:4.66, sub:'A'},
+      {t:'TZXS7', x:1.162, y:5.88, sub:'A'},
+      {t:'TZXD7', x:1.343, y:6.87, sub:'A'},
+      {t:'TZXM8', x:1.597, y:8.09, sub:'A'},
+      {t:'TZX28', x:1.821, y:8.20, sub:'A'},
+      {t:'TZXM9', x:2.497, y:8.32, sub:'A'},
+      {t:'TX26', x:0.35, y:1.84, sub:'B'},
+      {t:'TX28', x:1.24, y:6.27, sub:'B'},
+      {t:'TX31', x:2.70, y:8.15, sub:'B'}
+    ]}
+};
+const keys = ['tamar','duales','dlinked','cer'];
+let currentFam = 'all';
+let curveChart2;
+const muted = '#898781';
+const grid = '#e1e0d9';
+
+function quadFit(pts){
+  let n=pts.length, sx=0,sx2=0,sx3=0,sx4=0,sy=0,sxy=0,sx2y=0;
+  pts.forEach(p=>{
+    const x=p.x, y=p.y;
+    sx+=x; sx2+=x*x; sx3+=x*x*x; sx4+=x*x*x*x;
+    sy+=y; sxy+=x*y; sx2y+=x*x*y;
+  });
+  const A=[[n,sx,sx2],[sx,sx2,sx3],[sx2,sx3,sx4]];
+  const B=[sy,sxy,sx2y];
+  for (let i=0;i<3;i++){
+    let piv=A[i][i];
+    if (Math.abs(piv)<1e-9) piv=1e-9;
+    for (let j=i;j<3;j++) A[i][j]/=piv;
+    B[i]/=piv;
+    for (let k=0;k<3;k++){
+      if (k!==i){
+        const f=A[k][i];
+        for (let j=i;j<3;j++) A[k][j]-=f*A[i][j];
+        B[k]-=f*B[i];
+      }
+    }
+  }
+  return {c:B[0], b:B[1], a:B[2]};
+}
+function trendOf(pts){
+  const fit = quadFit(pts);
+  const out = [];
+  for (let x=0; x<=3.001; x+=0.1) out.push({x, y: fit.a*x*x+fit.b*x+fit.c});
+  return out;
+}
+
+const labelPlugin = {
+  id: 'tickerLabels',
+  afterDatasetsDraw(chart){
+    const {ctx} = chart;
+    chart.data.datasets.forEach((dataset, i)=>{
+      if (dataset.type !== 'scatter' || !dataset.showLabels) return;
+      const meta = chart.getDatasetMeta(i);
+      meta.data.forEach((point, idx)=>{
+        const raw = dataset.data[idx];
+        if (!raw || !raw.t) return;
+        ctx.save();
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = muted;
+        ctx.textAlign = 'left';
+        ctx.fillText(raw.t, point.x+6, point.y-6);
+        ctx.restore();
+      });
+    });
+  }
+};
+
+const btnRowC = document.getElementById('btnRowC');
+function addBtn(label, k){
+  const b = document.createElement('button');
+  b.textContent = label;
+  b.setAttribute('data-k', k);
+  b.onclick = () => { currentFam = k; render(); updateBtns(); };
+  btnRowC.appendChild(b);
+}
+addBtn('Comparación entre curvas', 'all');
+keys.forEach(k=>addBtn(fam[k].name, k));
+
+function updateBtns(){
+  Array.from(btnRowC.children).forEach(b=>{
+    const active = b.getAttribute('data-k') === currentFam;
+    b.style.background = active ? '#fcfcfb' : 'transparent';
+    b.style.borderColor = active ? '#898781' : '#c3c2b7';
+    b.style.fontWeight = active ? '600' : '400';
+  });
+}
+
+function render(){
+  const ctx = document.getElementById('curveChart2');
+  if (curveChart2) curveChart2.destroy();
+  const legendC = document.getElementById('legendC');
+  legendC.innerHTML = '';
+
+  if (currentFam === 'all'){
+    document.getElementById('curveTitle').textContent = 'Comparación de curvas de tendencia';
+    const datasets = [];
+    keys.forEach(k=>{
+      const g = fam[k];
+      datasets.push({ label: g.name, data: trendOf(g.points), type:'line', borderColor: g.trendColor, backgroundColor: g.trendColor, borderWidth:2, pointRadius:0, tension:0.3, order:2 });
+      datasets.push({ label: g.name + ' (bonos)', data: g.points, type:'scatter', backgroundColor: g.trendColor, borderColor: g.trendColor, pointRadius:5, pointStyle:'circle', order:1, showLabels:true });
+    });
+    curveChart2 = new Chart(ctx, {
+      type: 'line',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        parsing: false,
+        layout: { padding: { right: 40, top: 20 } },
+        plugins: {
+          legend: { display:false },
+          tooltip: {
+            filter: (item) => item.dataset.label.indexOf('(bonos)') !== -1,
+            callbacks: {
+              title: (items) => items[0].raw.t || '',
+              label: (item) => item.raw.y.toFixed(2) + '% · dur. ' + item.raw.x.toFixed(2) + ' a.'
+            }
+          }
+        },
+        scales: {
+          x: { type:'linear', min:0, max:3, title:{display:true,text:'Duración modificada (años)',color:muted,font:{size:11}}, grid:{color:grid}, ticks:{color:muted,font:{size:11}} },
+          y: { title:{display:true,text:'Rendimiento (%)',color:muted,font:{size:11}}, grid:{color:grid}, ticks:{color:muted,font:{size:11},callback:v=>v+'%'} }
+        }
+      },
+      plugins: [labelPlugin]
+    });
+    keys.forEach(k=>{
+      const span = document.createElement('span');
+      span.className = 'item';
+      const sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.style.borderRadius = '50%';
+      sw.style.background = fam[k].trendColor;
+      span.appendChild(sw);
+      const txt = document.createElement('span');
+      txt.textContent = fam[k].name;
+      span.appendChild(txt);
+      legendC.appendChild(span);
+    });
+  } else {
+    const g = fam[currentFam];
+    document.getElementById('curveTitle').textContent = 'Curva de rendimientos: ' + g.name;
+    const trendPts = trendOf(g.points);
+    const ptsA = g.points.filter(p=>p.sub==='A');
+    const ptsB = g.points.filter(p=>p.sub==='B');
+    const datasets = [
+      { label: 'Curva de tendencia', data: trendPts, type:'line', borderColor:'#eb6834', backgroundColor:'#eb6834', borderWidth:2, pointRadius:0, tension:0.3, order:3 },
+      { label: g.subA, data: ptsA, type:'scatter', backgroundColor: g.colorA, borderColor: g.colorA, pointRadius:6, pointStyle:'circle', order:1, showLabels:true }
+    ];
+    if (ptsB.length>0){
+      datasets.push({ label: g.subB, data: ptsB, type:'scatter', backgroundColor: g.colorB, borderColor: g.colorB, pointRadius:6, pointStyle:'circle', order:2, showLabels:true });
+    }
+    curveChart2 = new Chart(ctx, {
+      type: 'scatter',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        parsing: false,
+        layout: { padding: { right: 40, top: 20 } },
+        plugins: {
+          legend: { display:false },
+          tooltip: {
+            filter: (item) => item.dataset.label !== 'Curva de tendencia',
+            callbacks: {
+              title: (items) => items[0].raw.t || '',
+              label: (item) => item.raw.y.toFixed(2) + '% · dur. ' + item.raw.x.toFixed(2) + ' a.'
+            }
+          }
+        },
+        scales: {
+          x: { type:'linear', min:0, max:3, title:{display:true,text:'Duración modificada (años)',color:muted,font:{size:11}}, grid:{color:grid}, ticks:{color:muted,font:{size:11}} },
+          y: { title:{display:true,text:'Rendimiento (%)',color:muted,font:{size:11}}, grid:{color:grid}, ticks:{color:muted,font:{size:11},callback:v=>v+'%'} }
+        }
+      },
+      plugins: [labelPlugin]
+    });
+    [{label:g.subA,color:g.colorA}, ...(ptsB.length>0?[{label:g.subB,color:g.colorB}]:[]), {label:'Curva de tendencia',color:'#eb6834'}].forEach(d=>{
+      const span = document.createElement('span');
+      span.className = 'item';
+      const sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.style.background = d.color;
+      span.appendChild(sw);
+      const txt = document.createElement('span');
+      txt.textContent = d.label;
+      span.appendChild(txt);
+      legendC.appendChild(span);
+    });
+  }
+}
+render();
+updateBtns();
+</script>
+
+</body>
+</html>

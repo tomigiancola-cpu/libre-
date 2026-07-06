@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ranking de rendimientos por familia de bonos</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    color: #0b0b0b;
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  .eyebrow {
+    font-size: 12px;
+    color: #898781;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 14px;
+  }
+  #rankTitle {
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0 0 14px;
+  }
+  .btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  button {
+    font-size: 13px;
+    font-family: inherit;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 0.5px solid #c3c2b7;
+    background: transparent;
+    cursor: pointer;
+    color: #0b0b0b;
+  }
+  button:hover {
+    background: #fcfcfb;
+  }
+  .source {
+    font-size: 12px;
+    color: #898781;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="eyebrow">BYMA · 30-jun-26</div>
+<h1>Ranking de rendimientos por familia de bonos</h1>
+<div id="rankTitle">Rendimiento promedio por familia</div>
+
+<div class="btn-row" id="btnRowR"></div>
+
+<div style="position:relative;width:100%;height:340px;">
+  <canvas id="rankChart" role="img" aria-label="Gráfico de barras que compara el rendimiento promedio de cada familia de bonos, o el ranking de bonos dentro de la familia seleccionada, al 30 de junio de 2026.">Rendimiento promedio por familia de bonos y ranking individual dentro de cada familia, al 30 de junio de 2026.</canvas>
+</div>
+<div class="source">Fuente: BYMA/IAMC, informe de bonos al 30-jun-26.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const fam = {
+  tamar: { name:'TAMAR', color:'#2a78d6', items:[
+    {t:'M31G6', y:1.71}, {t:'TMF27', y:1.99}, {t:'TMG27', y:2.21}, {t:'TMF28', y:1.81}, {t:'TMG28', y:2.51}
+  ]},
+  duales: { name:'Duales', color:'#eda100', items:[
+    {t:'TTS26', y:1.79}, {t:'TTD26', y:1.89}, {t:'TXMJ8', y:2.46}, {t:'TXMD8', y:2.54}, {t:'TXMJ9', y:2.57}, {t:'TXMD9', y:2.63}, {t:'TXMJ0', y:2.64}
+  ]},
+  dlinked: { name:'Dollar linked', color:'#1baf7a', items:[
+    {t:'D30S6', y:0.14}, {t:'D31G6', y:3.77}, {t:'D31L6', y:5.86}, {t:'D31M7', y:1.05}, {t:'TZV27', y:0.55}, {t:'TZV28', y:7.68}, {t:'TZVD8', y:8.33}
+  ]},
+  cer: { name:'CER', color:'#e34948', items:[
+    {t:'TZXO6', y:1.03}, {t:'TX26', y:1.84}, {t:'TZXD6', y:4.32}, {t:'TZXA7', y:3.42}, {t:'TZXY7', y:3.54}, {t:'TZXM7', y:5.46}, {t:'TZX27', y:4.66}, {t:'TZXS7', y:5.88}, {t:'TX28', y:6.27}, {t:'TZXD7', y:6.87}, {t:'TZXM8', y:8.09}, {t:'TZX28', y:8.20}, {t:'TZXM9', y:8.32}, {t:'TX31', y:8.15}
+  ]}
+};
+const keys = ['tamar','duales','dlinked','cer'];
+let currentFam = 'all';
+let rankChart;
+const muted = '#898781';
+const grid = '#e1e0d9';
+
+function avg(items){ return items.reduce((s,x)=>s+x.y,0)/items.length; }
+
+const btnRowR = document.getElementById('btnRowR');
+function addBtn(label, k){
+  const b = document.createElement('button');
+  b.textContent = label;
+  b.setAttribute('data-k', k);
+  b.onclick = () => { currentFam = k; render(); updateBtns(); };
+  btnRowR.appendChild(b);
+}
+addBtn('Comparación entre familias', 'all');
+keys.forEach(k=>addBtn(fam[k].name, k));
+
+function updateBtns(){
+  Array.from(btnRowR.children).forEach(b=>{
+    const active = b.getAttribute('data-k') === currentFam;
+    b.style.background = active ? '#fcfcfb' : 'transparent';
+    b.style.borderColor = active ? '#898781' : '#c3c2b7';
+    b.style.fontWeight = active ? '600' : '400';
+  });
+}
+
+function render(){
+  const ctx = document.getElementById('rankChart');
+  if (rankChart) rankChart.destroy();
+  const wrapper = ctx.parentElement;
+
+  if (currentFam === 'all'){
+    document.getElementById('rankTitle').textContent = 'Rendimiento promedio por familia';
+    wrapper.style.height = '340px';
+    const avgs = keys.map(k=>avg(fam[k].items));
+    rankChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: keys.map(k=>fam[k].name),
+        datasets: [{ data: avgs, backgroundColor: keys.map(k=>fam[k].color), borderRadius: 4, maxBarThickness: 60 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display:false },
+          tooltip: { callbacks: { label: (item) => 'Promedio: ' + item.raw.toFixed(2) + '%' } }
+        },
+        scales: {
+          x: { grid: { display:false }, ticks: { color: muted, font:{size:12} } },
+          y: { grid: { color: grid }, ticks: { color: muted, font:{size:11}, callback: v=>v+'%' } }
+        }
+      }
+    });
+  } else {
+    const g = fam[currentFam];
+    document.getElementById('rankTitle').textContent = 'Ranking de rendimientos: ' + g.name;
+    const sorted = [...g.items].sort((a,b)=>b.y-a.y);
+    wrapper.style.height = Math.max(280, sorted.length*40+80) + 'px';
+    rankChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: sorted.map(x=>x.t),
+        datasets: [{ data: sorted.map(x=>x.y), backgroundColor: g.color, borderRadius: 4, maxBarThickness: 26 }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: (item) => item.raw.toFixed(2) + '%' } }
+        },
+        scales: {
+          x: { grid: { color: grid }, ticks: { color: muted, font:{size:11}, callback: v=>v+'%' } },
+          y: { grid: { display:false }, ticks: { color: muted, font:{size:12} } }
+        }
+      }
+    });
+  }
+}
+render();
+updateBtns();
+</script>
+
+</body>
+</html>
