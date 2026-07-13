@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calendario de Cupones — Cartera de ONs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1826;
+    --bg-alt:#132135;
+    --card:#182742;
+    --card-hover:#1e3050;
+    --border:#2a3d5c;
+    --text:#e9edf3;
+    --muted:#8ea0bb;
+    --muted-dim:#5f7192;
+    --gold:#cf9f3f;
+    --gold-dim:#8a723a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, #1a2c48 0%, transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px;margin:0 auto;padding:36px 24px 56px;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 10px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:'';width:20px;height:1px;background:var(--gold-dim);display:inline-block;}
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(24px,4vw,32px);
+    line-height:1.1;
+    margin:0 0 20px;
+    letter-spacing:-.01em;
+  }
+  h1 em{font-style:italic;color:var(--gold);}
+
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+    background:var(--bg-alt);
+    margin-bottom:28px;
+  }
+  .stat{padding:14px 16px;border-right:1px solid var(--border);}
+  .stat:last-child{border-right:none;}
+  .stat .num{font-family:'Fraunces',serif;font-size:20px;color:var(--gold);font-weight:500;}
+  .stat .lbl{font-size:10.5px;color:var(--muted);letter-spacing:.02em;margin-top:3px;line-height:1.3;}
+
+  .mode-switch{
+    display:flex;
+    gap:0;
+    background:var(--bg-alt);
+    border:1px solid var(--border);
+    border-radius:100px;
+    padding:4px;
+    width:fit-content;
+    margin-bottom:22px;
+  }
+  .mode-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;font-weight:600;
+    letter-spacing:.02em;
+    padding:9px 20px;
+    border-radius:100px;
+    border:none;
+    background:transparent;
+    color:var(--muted);
+    cursor:pointer;
+    transition:all .18s ease;
+  }
+  .mode-btn.active{background:var(--gold);color:#1a1305;}
+
+  .panel{
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--card);
+    overflow:hidden;
+    min-height:360px;
+  }
+
+  .tickers{display:flex;flex-wrap:wrap;gap:8px;padding:20px 24px 0;}
+  .tick-btn{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;font-weight:500;
+    padding:8px 14px;
+    border-radius:100px;
+    border:1px solid var(--border);
+    background:var(--bg-alt);
+    color:var(--muted);
+    cursor:pointer;
+    transition:all .18s ease;
+    display:flex;align-items:center;gap:7px;
+  }
+  .tick-btn .dot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.6;}
+  .tick-btn:hover{border-color:var(--muted-dim);color:var(--text);}
+  .tick-btn.active{background:var(--card-hover);color:var(--text);border-color:var(--accent,var(--gold));}
+  .tick-btn.active .dot{opacity:1;}
+
+  .detail{
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    margin-top:18px;
+  }
+  .detail-info{padding:26px 28px;border-right:1px solid var(--border);}
+  .detail-info .emisor{font-family:'Fraunces',serif;font-size:19px;font-weight:500;margin:0 0 2px;}
+  .detail-info .sector{color:var(--muted);font-size:13px;margin:0 0 20px;}
+  .kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;}
+  .kv .k{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted-dim);margin-bottom:4px;}
+  .kv .v{font-family:'IBM Plex Mono',monospace;font-size:15px;color:var(--text);}
+  .kv .v.accent{color:var(--gold);font-size:18px;}
+
+  .detail-wheel{padding:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg-alt);}
+  .wheel-caption{font-size:10.5px;color:var(--muted-dim);letter-spacing:.04em;text-transform:uppercase;margin-top:10px;text-align:center;}
+  .wheel-caption b{color:var(--text);font-weight:600;}
+
+  .year-tabs{display:flex;gap:6px;padding:20px 24px 0;}
+  .year-btn{
+    font-family:'Fraunces',serif;
+    font-size:15px;
+    padding:8px 18px;
+    border-radius:8px 8px 0 0;
+    border:1px solid var(--border);
+    border-bottom:none;
+    background:var(--bg-alt);
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .year-btn.active{background:var(--card-hover);color:var(--gold);}
+
+  .flow-body{padding:0 26px 20px;}
+  .flow-total{display:flex;justify-content:space-between;align-items:baseline;margin:16px 0 14px;padding-bottom:14px;border-bottom:1px dashed var(--border);flex-wrap:wrap;gap:6px;}
+  .flow-total .lbl{color:var(--muted);font-size:12.5px;}
+  .flow-total .amt{font-family:'Fraunces',serif;font-size:19px;color:var(--gold);}
+  .flow-total .amt span{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);margin-left:6px;}
+
+  .bar-row{display:grid;grid-template-columns:82px 62px 1fr 68px;align-items:center;gap:10px;padding:7px 0;}
+  .bar-row + .bar-row{border-top:1px solid rgba(255,255,255,.04);}
+  .bar-date{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);}
+  .bar-tick{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;}
+  .bar-track{position:relative;height:18px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;}
+  .bar-seg{position:absolute;top:0;bottom:0;left:0;transition:width .5s cubic-bezier(.4,0,.2,1);}
+  .bar-seg.amort{background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.22) 0 4px, transparent 4px 8px);}
+  .bar-val{font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;color:var(--text);}
+
+  .legend{display:flex;gap:20px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border);}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted);}
+  .legend-swatch{width:13px;height:9px;border-radius:2px;}
+  .legend-swatch.renta{background:var(--gold);}
+  .legend-swatch.amort{background:var(--gold);background-image:repeating-linear-gradient(45deg, rgba(255,255,255,.35) 0 3px, transparent 3px 6px);}
+
+  footer{margin-top:28px;color:var(--muted-dim);font-size:11.5px;line-height:1.6;}
+  footer b{color:var(--muted);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  @media(max-width:640px){
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .stat:nth-child(2){border-right:none;}
+    .stat:nth-child(3),.stat:nth-child(4){border-top:1px solid var(--border);}
+    .detail{grid-template-columns:1fr;}
+    .detail-info{border-right:none;border-bottom:1px solid var(--border);}
+    .bar-row{grid-template-columns:64px 48px 1fr 56px;gap:6px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Cartera de Obligaciones Negociables · USD</p>
+  <h1>Calendario de <em>cupones</em> y flujo de fondos</h1>
+
+  <div class="stat-row">
+    <div class="stat"><div class="num">8,34%</div><div class="lbl">TIR promedio de cartera</div></div>
+    <div class="stat"><div class="num">3,65</div><div class="lbl">Duration modificada promedio</div></div>
+    <div class="stat"><div class="num">6</div><div class="lbl">ONs · ponderación equivalente</div></div>
+    <div class="stat"><div class="num">12</div><div class="lbl">Meses del año con cobro de renta</div></div>
+  </div>
+
+  <div class="mode-switch">
+    <button class="mode-btn active" data-mode="fichas">Fichas por ON</button>
+    <button class="mode-btn" data-mode="flujo">Flujo de fondos</button>
+  </div>
+
+  <div class="panel">
+
+    <div class="view active" id="view-fichas">
+      <div class="tickers" id="tickerTabs"></div>
+      <div class="detail">
+        <div class="detail-info" id="detailInfo"></div>
+        <div class="detail-wheel">
+          <svg id="wheel" width="190" height="190" viewBox="0 0 220 220"></svg>
+          <div class="wheel-caption" id="wheelCaption"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-flujo">
+      <div class="year-tabs" id="yearTabs"></div>
+      <div class="flow-body">
+        <div class="flow-total" id="flowTotal"></div>
+        <div id="barRows"></div>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-swatch renta"></span> Renta (interés)</div>
+          <div class="legend-item"><span class="legend-swatch amort"></span> Amortización de capital</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    La serie de flujos usa el ticker <b>TLCTD</b> para los pagos de Telecom Argentina (misma emisora que <b>TLCTO</b> en la ficha). El flujo de CAC5O (Capex) amortiza capital desde 2026, por lo que su cobro decrece con cada pago. Material informativo, no constituye recomendación de inversión.
+  </footer>
+
+</div>
+
+<script>
+const bonds = [
+  { ticker:'TLCTO', flowTicker:'TLCTD', emisor:'Telecom Argentina', sector:'Telecomunicaciones', vto:'20/01/2036', tir:7.82, dur:5.8, meses:'Enero / Julio', months:[1,7], color:'#5b9bd5' },
+  { ticker:'CAC5O', flowTicker:'CAC5O', emisor:'Capex', sector:'Energía', vto:'25/08/2028', tir:6.94, dur:1.0, meses:'Febrero / Agosto', months:[2,8], color:'#cf9f3f' },
+  { ticker:'YMCXO', flowTicker:'YMCXO', emisor:'YPF', sector:'Petróleo y gas', vto:'11/09/2031', tir:6.99, dur:3.5, meses:'Marzo / Septiembre', months:[3,9], color:'#4fb8a6' },
+  { ticker:'DNCAO', flowTicker:'DNCAO', emisor:'Edenor', sector:'Distribución eléctrica', vto:'28/04/2033', tir:9.25, dur:4.1, meses:'Abril / Octubre', months:[4,10], color:'#9c86d8' },
+  { ticker:'CP38O', flowTicker:'CP38O', emisor:'Compañía General de Combustibles', sector:'Petróleo y gas', vto:'28/11/2030', tir:11.60, dur:3.1, meses:'Mayo / Noviembre', months:[5,11], color:'#d97757' },
+  { ticker:'VSCVO', flowTicker:'VSCVO', emisor:'Vista Energy', sector:'Petróleo y gas', vto:'10/06/2033', tir:7.41, dur:4.4, meses:'Junio / Diciembre', months:[6,12], color:'#7fb069' },
+];
+
+const flows = [
+  {date:'20-07-2026', ticker:'TLCTD', renta:42.15, amort:0},
+  {date:'25-08-2026', ticker:'CAC5O', renta:28.67, amort:125},
+  {date:'11-09-2026', ticker:'YMCXO', renta:43.75, amort:0},
+  {date:'28-10-2026', ticker:'DNCAO', renta:47.5, amort:0},
+  {date:'28-11-2026', ticker:'CP38O', renta:59.86, amort:0},
+  {date:'10-12-2026', ticker:'VSCVO', renta:42.5, amort:0},
+  {date:'20-01-2027', ticker:'TLCTD', renta:42.85, amort:0},
+  {date:'25-02-2027', ticker:'CAC5O', renta:23.32, amort:125},
+  {date:'11-03-2027', ticker:'YMCXO', renta:43.75, amort:0},
+  {date:'28-04-2027', ticker:'DNCAO', renta:47.5, amort:0},
+  {date:'28-05-2027', ticker:'CP38O', renta:58.89, amort:0},
+  {date:'10-06-2027', ticker:'VSCVO', renta:42.5, amort:0},
+  {date:'20-07-2027', ticker:'TLCTD', renta:42.15, amort:0},
+  {date:'25-08-2027', ticker:'CAC5O', renta:17.2, amort:125},
+  {date:'11-09-2027', ticker:'YMCXO', renta:43.75, amort:0},
+  {date:'28-10-2027', ticker:'DNCAO', renta:47.5, amort:0},
+  {date:'28-11-2027', ticker:'CP38O', renta:59.86, amort:0},
+  {date:'10-12-2027', ticker:'VSCVO', renta:42.5, amort:0},
+  {date:'20-01-2028', ticker:'TLCTD', renta:42.85, amort:0},
+  {date:'25-02-2028', ticker:'CAC5O', renta:11.66, amort:125},
+  {date:'11-03-2028', ticker:'YMCXO', renta:43.75, amort:0},
+  {date:'28-04-2028', ticker:'DNCAO', renta:47.5, amort:0},
+  {date:'28-05-2028', ticker:'CP38O', renta:59.21, amort:0},
+  {date:'10-06-2028', ticker:'VSCVO', renta:42.5, amort:0},
+  {date:'20-07-2028', ticker:'TLCTD', renta:42.38, amort:0},
+  {date:'25-08-2028', ticker:'CAC5O', renta:5.77, amort:125},
+];
+
+const fmt = n => n.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
+const monthNames = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+
+let selectedTicker = bonds[0].ticker;
+let selectedYear = '2026';
+
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const mode = btn.dataset.mode;
+    document.getElementById('view-fichas').classList.toggle('active', mode==='fichas');
+    document.getElementById('view-flujo').classList.toggle('active', mode==='flujo');
+  };
+});
+
+const tickerTabs = document.getElementById('tickerTabs');
+bonds.forEach(b=>{
+  const btn = document.createElement('button');
+  btn.className = 'tick-btn';
+  btn.style.setProperty('--accent', b.color);
+  btn.innerHTML = `<span class="dot" style="color:${b.color}"></span>${b.ticker}`;
+  btn.onclick = ()=>{ selectedTicker = b.ticker; renderDetail(); renderBars(); };
+  btn.dataset.ticker = b.ticker;
+  tickerTabs.appendChild(btn);
+});
+
+function renderDetail(){
+  document.querySelectorAll('.tick-btn').forEach(el=>{
+    el.classList.toggle('active', el.dataset.ticker === selectedTicker);
+  });
+  const b = bonds.find(x=>x.ticker===selectedTicker);
+
+  document.getElementById('detailInfo').innerHTML = `
+    <p class="emisor">${b.emisor}</p>
+    <p class="sector">${b.sector} · ${b.ticker}</p>
+    <div class="kv-grid">
+      <div class="kv"><div class="k">Vencimiento</div><div class="v">${b.vto}</div></div>
+      <div class="kv"><div class="k">Meses de cobro</div><div class="v">${b.meses}</div></div>
+      <div class="kv"><div class="k">TIR</div><div class="v accent">${b.tir.toFixed(2).replace('.',',')}%</div></div>
+      <div class="kv"><div class="k">Duration modificada</div><div class="v accent">${b.dur.toFixed(1).replace('.',',')} años</div></div>
+    </div>
+  `;
+
+  drawWheel(b);
+  document.getElementById('wheelCaption').innerHTML = `Cobro de renta en <b>${b.meses}</b>`;
+}
+
+function drawWheel(b){
+  const svg = document.getElementById('wheel');
+  const cx=110, cy=110, r=88, rInner=70;
+  let html = '';
+  html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#2a3d5c" stroke-width="1"/>`;
+  for(let m=1;m<=12;m++){
+    const angle = (m-1)/12*2*Math.PI - Math.PI/2;
+    const active = b.months.includes(m);
+    const x1 = cx + Math.cos(angle)*rInner;
+    const y1 = cy + Math.sin(angle)*rInner;
+    const x2 = cx + Math.cos(angle)*r;
+    const y2 = cy + Math.sin(angle)*r;
+    const lx = cx + Math.cos(angle)*(r+16);
+    const ly = cy + Math.sin(angle)*(r+16);
+    html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${active? b.color : '#3a4d6c'}" stroke-width="${active?3:1.5}"/>`;
+    if(active){
+      html += `<circle cx="${x2}" cy="${y2}" r="5" fill="${b.color}"/>`;
+    }
+    html += `<text x="${lx}" y="${ly+4}" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="${active? '#e9edf3' : '#5f7192'}" font-weight="${active?'600':'400'}">${monthNames[m-1]}</text>`;
+  }
+  if(b.months.length===2){
+    const a1=(b.months[0]-1)/12*2*Math.PI - Math.PI/2, a2=(b.months[1]-1)/12*2*Math.PI - Math.PI/2;
+    html += `<line x1="${cx+Math.cos(a1)*rInner}" y1="${cy+Math.sin(a1)*rInner}" x2="${cx+Math.cos(a2)*rInner}" y2="${cy+Math.sin(a2)*rInner}" stroke="${b.color}" stroke-width="1" stroke-dasharray="2 4" opacity="0.5"/>`;
+  }
+  html += `<circle cx="${cx}" cy="${cy}" r="3" fill="#5f7192"/>`;
+  svg.innerHTML = html;
+}
+
+const years = ['2026','2027','2028'];
+const yearTabs = document.getElementById('yearTabs');
+years.forEach(y=>{
+  const btn = document.createElement('button');
+  btn.className = 'year-btn';
+  btn.textContent = y;
+  btn.dataset.year = y;
+  btn.onclick = ()=>{ selectedYear = y; renderBars(); };
+  yearTabs.appendChild(btn);
+});
+
+const GLOBAL_MAX = 160;
+
+function renderBars(){
+  document.querySelectorAll('.year-btn').forEach(el=>{
+    el.classList.toggle('active', el.dataset.year === selectedYear);
+  });
+
+  const rows = flows.filter(f => f.date.endsWith(selectedYear));
+  const total = rows.reduce((s,f)=>s+f.renta+f.amort, 0);
+  const totalRenta = rows.reduce((s,f)=>s+f.renta, 0);
+  const totalAmort = rows.reduce((s,f)=>s+f.amort, 0);
+
+  document.getElementById('flowTotal').innerHTML = `
+    <span class="lbl">Total percibido en ${selectedYear} · ${rows.length} pagos</span>
+    <span class="amt">USD ${fmt(total)} <span>renta ${fmt(totalRenta)} + amort. ${fmt(totalAmort)}</span></span>
+  `;
+
+  const container = document.getElementById('barRows');
+  container.innerHTML = '';
+  rows.forEach(f=>{
+    const b = bonds.find(x=>x.flowTicker===f.ticker);
+    const dim = selectedTicker && b.ticker!==selectedTicker;
+    const rentaPct = (f.renta/GLOBAL_MAX*100).toFixed(2);
+    const amortPct = (f.amort/GLOBAL_MAX*100).toFixed(2);
+    const totalVal = f.renta+f.amort;
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.style.opacity = dim ? '0.45' : '1';
+    row.innerHTML = `
+      <div class="bar-date">${f.date.slice(0,5)}</div>
+      <div class="bar-tick" style="color:${b.color}">${f.ticker}</div>
+      <div class="bar-track">
+        <div class="bar-seg renta" style="width:${rentaPct}%; background:${b.color};"></div>
+        <div class="bar-seg amort" style="width:${amortPct}%; left:${rentaPct}%; background:${b.color};"></div>
+      </div>
+      <div class="bar-val">${fmt(totalVal)}</div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+renderDetail();
+renderBars();
+</script>
+</body>
+</html>
